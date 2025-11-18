@@ -102,12 +102,12 @@ def initial_set_up():
     line2 = " " + text.center(width - 2)
     line3 = ("*" * (len(line2) // 3)).center(width - 2)
     line4 = "1. Collecting latest repo from Git "
-    line5 = f"2. Column mapping file has been downloaded to {Path.home()}\Downloads\column_mapping.csv with dummy data for reference. "
-    line6 = "3. Please update the downloaded Column mapping file as per your revenue data and save it to Downloads"
-    line7 = "4. Similar to column mapping, Update your data platform credentials as well in the profiles.yml(which is like .env file) from Downloads"
+    line5 = f"2. A Column mapping file has been downloaded to {Path.home()}\Downloads\column_mapping.csv with dummy data for reference. "
+    line6 = "3. Update the levels and dimensions in the downloaded column_mapping file as per your revenue data and save it in Downloads"
+    line7 = "4. Similar to column mapping, Locate and update your data platform credentials also in the profiles.yml(which is like .env file) from Downloads"
     # line7 = "4. Create a folder .dbt in the root directory and create a profiles.yml file"
     # line8 = "5. Update profiles.yml with your database credentials - Please refer Readme for more details [https://github.com/jmangroup/snowball_dbt#]"
-    line9 = "Press Enter to continue "
+    line9 = "If you are done with your updates, Press Enter to continue "
 
     # Get terminal width
     term_width = shutil.get_terminal_size().columns
@@ -360,8 +360,8 @@ def connection_check(dbname, schemaname, tablename):
         
         # Actually run the debug command and capture real-time progress
         start_time = time.time()
-        print(vars_dict)
-        print(f"[DEBUG] Running dbt debug with args: {debug_args}")
+        # print(vars_dict)
+        # print(f"[DEBUG] Running dbt debug with args: {debug_args}")
         with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
             result = dbt.invoke(debug_args)
         execution_time = time.time() - start_time
@@ -508,11 +508,9 @@ def run_dbt(dbname, schemaname, tablename):
     run_args = [
         "run",
         "--project-dir", project_dir,
-        "--profiles-dir", os.path.dirname(profiles_dir),  # ✅ FIXED: use folder, not file
+        "--profiles-dir", os.path.dirname(profiles_dir),
         "--vars", vars_str
     ]
-
-    print(f"[DEBUG] Running dbt with args: {run_args}")
 
     model_count = get_dbt_models_count()
 
@@ -1085,36 +1083,39 @@ def remove_readonly_files(func, path, _):
     os.chmod(path, stat.S_IWRITE)
     func(path)
 
-def clone_repo(source_path: str) -> str:
+def copy_snowball_dbt(source_path: str) -> str:
     """
-    Clone the Git repository from `git_url` into the current directory.
+    Get the driving snowball dbt folder / code into downloads
     
     Args:
-        git_url (str): URL of the git repository to clone.
+        source_path (str): Path to the source directory to copy.
         
+    Returns:
+        str: Path to the column_mapping.csv file
     """
+    source_path = os.path.normpath(os.path.abspath(source_path))
+
+    if not os.path.exists(source_path):
+        raise FileNotFoundError(f"Source directory not found: {source_path}")
+
     repo_name = os.path.basename(source_path)
     downloads_dir = Path.home() / "Downloads"
-    temp_clone_location = downloads_dir / f"{repo_name}_temp"
+    temp_clone_location = downloads_dir / f"{repo_name}_temp_snowball_driver"
     final_clone_location = downloads_dir / repo_name
 
-    # Remove existing target folder if present
     if final_clone_location.exists():
         shutil.rmtree(final_clone_location, onerror=remove_readonly_files)
     if temp_clone_location.exists():
         shutil.rmtree(temp_clone_location, onerror=remove_readonly_files)
 
-    # Copy all files to a temporary folder first
     shutil.copytree(source_path, temp_clone_location, dirs_exist_ok=True)
-
     temp_clone_location.rename(final_clone_location)
 
-    current_time = time.time()
-    os.utime(final_clone_location, (current_time, current_time))
+    mapping_file = final_clone_location / "seeds" / "column_mapping.csv"
+    if not mapping_file.exists():
+        raise FileNotFoundError(f"Column mapping file not found at: {mapping_file}")
 
-    # Return the mapping file path
-    return str(final_clone_location / "seeds" / "column_mapping.csv")
-
+    return str(mapping_file)
 
 def copy_csv_to_downloads(src_csv_path: str) -> str:
     """
@@ -1195,14 +1196,18 @@ def main():
     # cleanup_previous_run()
 
     # Clone the latest repo from Snowball dbt
-    mapping_file_path = clone_repo("snowball_versions\snowball_dbt")
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    snowball_versions_path = os.path.join(current_dir, "..", "snowball_versions", "snowball_dbt")
+    snowball_versions_path = os.path.normpath(snowball_versions_path)
+
+    mapping_file_path = copy_snowball_dbt(snowball_versions_path)
     copy_csv_to_downloads(mapping_file_path)
 
     profiles_src_path = os.path.join(Path(mapping_file_path).parents[1], "profiles.yml")
     copy_profiles_to_downloads(profiles_src_path)
-
+    
     initial_set_up()
-
+    
     project_root = project_dir
     text = f"Checking Database Connection!"
     width = len(text) + 8  # padding for stars
@@ -1222,7 +1227,7 @@ def main():
     type = db_config.get("type")
 
     print(f"Revenue table: {dbname}.{schemaname}.{tablename}")
-
+   
     update_profile(dbt_profiles_dir, profiles_dir)
     
     print("Available Database Platform")
@@ -1240,13 +1245,13 @@ def main():
         5: "redshift"
     }
     user_choice = int(input("\nSelect your Database Platform [1-5]: ").strip())
-    while():
+    while 1:
         try:
             if user_choice in [1, 2, 3, 4, 5]:
                 break
-            else: user_choice = int(input("❌ Invalid input. Please enter [1-5]: ").strip())
+            else: user_choice = int(input("❌ Invalid input. Please enter between [1-5]: ").strip())
         except ValueError:
-            print("❌ Invalid input. Please enter [1-5].")
+            print("❌ Invalid input. Please enter between [1-5].")
 
     def checking():
         connection = connection_check(dbname,schemaname,tablename)
@@ -1258,7 +1263,7 @@ def main():
             # rotating_slash_after(line4,8,1)
             print("\U0001F642 Connection Established Successfully! \n")
     checking()
-
+    
     text = f"Database Platform | Snowball Version!"
     width = len(text) + 8  # padding for stars
     border = "*" * width
@@ -1270,14 +1275,13 @@ def main():
     print(line1)
     print(line2)
     print(line3)
-
+    
     deps_result = run_dbt_deps(dbname, schemaname, tablename)
     if not deps_result.success:
         print("❌ dbt deps failed")
         return
 
     copy_seed_file(mapping_file, dbt_seed_dir, dbname, schemaname, tablename)
-
     print(line3)
     print("Available Snowball Version")
     print("     1: dbt")
@@ -1285,6 +1289,7 @@ def main():
     print("     3: Spark sql")
     print("     4: Redshift - N/A")
 
+    ''' Final Ending Text applied in all version choices '''
     final_text = "  Thanks for using Snowball Product! Happy coding! \U0001F642  "
     # Get terminal width
     term_width = shutil.get_terminal_size().columns
@@ -1305,7 +1310,7 @@ def main():
 
         try:
             rotating_slash_after(text, 10)
-            output_zip    = os.path.join(output_dir, "snowball_dbt.zip")
+            output_zip = os.path.join(output_dir, "snowball_dbt.zip")
             update_revenue_model_with_table_name(project_dir, tablename)
             zip_directory(project_dir, output_zip)
             print(f"snowball_dbt code is saved at: {output_zip}\n")
@@ -1317,7 +1322,7 @@ def main():
         print("Generating SQL code...")
         
         try:
-            output_zip    = os.path.join(output_dir, "snowball_sql.zip")
+            output_zip = os.path.join(output_dir, "snowball_sql.zip")
             macro_result = run_pre_run_setup(dbname, schemaname, tablename)
             if not macro_result.success:
                 print("❌ Pre-run setup macro failed")
@@ -1325,11 +1330,11 @@ def main():
                 
             run_result = run_dbt(dbname, schemaname, tablename)
             if not run_result.success:
-                print("❌ dbt run failed")
+                print("❌ Execution failed")
                 return
                 
         except Exception as e:
-            print(f"❌ dbt run failed: {e}")
+            print(f"❌ Execution failed: {e}")
             return
         
         compile_args = build_dbt_compile_args(dbname, schemaname, tablename)
@@ -1341,7 +1346,7 @@ def main():
                 with tqdm(desc="SQLFluff issues detected", bar_format='{desc}') as pbar:
                     time.sleep(1)
                     
-            process_compiled_sql_files()
+            if user_choice == 4: process_compiled_sql_files()
             update_revenue_model_with_table_name(compiled_dir, tablename)
             zip_directory(compiled_dir, output_zip)
             print(f"snowball_sql code is generated successfully and saved at: {output_zip}\n")
@@ -1361,11 +1366,11 @@ def main():
                 
             run_result = run_dbt(dbname, schemaname, tablename)
             if not run_result.success:
-                print("❌ dbt run failed")
+                print("❌ Execution failed")
                 return
                 
         except Exception as e:
-            print(f"❌ dbt run failed: {e}")
+            print(f"❌ Execution failed: {e}")
             return
 
         compile_args = build_dbt_compile_args(dbname, schemaname, tablename)

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: snowball
-Version: 1.3.8
+Version: 1.3.9
 Summary: Generate dbt , sql projects and PySpark notebooks.
 Home-page: https://gitserver/org/dbt_runner
 Author: Vishal Verma
@@ -11,3 +11,326 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 License-File: LICENSE
+
+# Snowball Package
+
+**Snowball Package** is a centralized, adaptable, and cross-platform command-line tool designed to generate Snowball code in multiple forms such as **Spark SQL Notebooks**, **Plain SQL Scripts**, and **dbt-based models**, compatible with multiple data platforms including **SQL Server, Snowflake, Databricks, Fabric, and Redshift**.  
+It enables users to effortlessly generate platform-specific code for their project dimensions while adhering to the latest Snowball data modeling standards — including standardized buckets, calculations, and testing frameworks within few minutes.
+
+The generated code follows modern Snowball modeling conventions, providing consistency, scalability, and high-quality analytical logic.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Features](#features)
+- [Supported Platforms](#supported-platforms)
+- [Project Structure](#project-structure)
+- [Usage Examples](#usage-examples)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Upcoming Enhancements](#upcoming-enhancements)
+- [License](#license)
+- [Contact](#contact)
+
+---
+
+## Overview
+
+The **Snowball Package** is a **Python-based automation framework** that generates platform-specific code in multiple formats — including dbt-based models, SQL scripts, and Spark SQL notebooks.
+
+It extends the capabilities of dbt by integrating required libraries and automating platform transformations. This simplifies the process of building consistent, reusable, and production-ready analytical solutions.
+
+**Key Functions:**
+- Establishes connections and executes dbt commands programmatically  
+- Compiles and formats dbt projects automatically  
+- Packages dbt workflows into **ready-to-deploy archives**  
+- Manages dependencies and adapts to multiple data platforms  
+
+This package streamlines **analytics**, **reporting**, and **data modeling workflows**, reducing manual effort and improving productivity.
+
+---
+
+## Requirements
+
+### Prerequisites
+
+- **Python 3.7 or higher**  
+- **Git** (required for package installation)  
+- Space for virtual environment creation  
+- Data platform credentials (e.g., Snowflake, Fabric, Databricks, etc.)
+
+### Automatic Dependencies
+
+The following Python libraries are installed automatically with Snowball:
+
+- `dbt-core` – Core dbt functionality  
+- `sqlfluff` – SQL linting and formatting  
+- `nbformat` – Jupyter notebook generation and handling  
+- `pyspark` – Spark SQL integration  
+
+---
+
+## Steps for Package Usage
+
+Follow these steps to generate your Snowball-ready code.
+
+1. **Create a new folder / space for project**  
+   Create a dedicated directory for your project.
+
+2. **Set up a virtual environment**  
+   Run the following commands to ensure package isolation:
+
+   ```bash
+   python -m venv venv
+   venv\Scripts\activate
+````
+
+If you encounter any execution policy restrictions, use:
+
+```bash
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+python -m venv venv
+venv\Scripts\activate
+```
+
+Continue all subsequent steps within the activated virtual environment.
+
+---
+
+## Quick Start
+
+### Step 1: Initial Setup
+
+Install Snowball directly from the GitHub repository.
+This initiates the main automation function for generating your platform-specific code.
+
+```bash
+pip install git+https://github.com/jmangroup/snowball.git
+```
+
+### Step 2: Launch Snowball
+
+```bash
+snowball
+```
+
+Once installed:
+
+1. A `column_mapping.csv` and `profiles.yml` file will be placed in your **Downloads** folder.
+2. Update both files as per your project requirements before proceeding.
+
+---
+
+## Configuration
+
+### Column Mapping File
+
+The `column_mapping.csv` file (located in your Downloads folder) maps source columns to target dimensions for your project.
+Update and save it according to your dimension hierarchy.
+
+**Example structure:**
+
+```csv
+source_column,target_dimension,dimension_type,data_type
+user_id,customer,customer,string
+order_date,date,NULL,date
+item_id,product,product,string
+amount,revenue,NULL,float
+```
+
+---
+
+### Profiles Configuration
+
+The `profiles.yml` file defines your connection settings to the target data platform.
+Locate your platform section from various given platform credentials as an example and update credentials accordingly against that particular data platform.
+
+**Example Snowflake configuration:**
+
+```yaml
+snowball_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: your_account.region
+      user: your_username
+      password: your_password
+      database: your_database
+      schema: your_schema
+      warehouse: your_warehouse
+      role: your_role
+```
+
+**Example Databricks configuration:**
+
+```yaml
+snowball_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      catalog: your_catalog
+      schema: your_schema
+      host: your_host.databricks.com
+      http_path: your_http_path
+      token: your_token
+```
+
+---
+
+### Step 3: Interactive Configuration
+
+1. **Enter your main revenue table name** when prompted
+2. **Select your target platform** from the interactive menu
+3. The package will automatically test the connection and install dependencies
+
+   * If the connection fails, verify and update `profiles.yml` again, then retry by hitting enter
+4. **Choose your Snowball version** – dbt-based, SQL, or Spark SQL etc from the listed menu
+5. After a few minutes of processing, a `.zip` file containing your generated code will appear in your Downloads directory
+
+---
+
+## Features
+
+### Core Capabilities
+
+- **Automated Dependency Management** - Installs and manages all required libraries
+- **DBT Project Compilation** - Programmatic execution and compilation of dbt models
+- **SQL Quality Enforcement** - SQLFluff formatting applied to all compiled SQL
+- **Multi-Format Output** - Generates both PySpark notebooks and plain SQL scripts
+- **Production-Ready Code** - Transforms outputs into stored procedure-ready code
+- **Cross-Platform Compatibility** - Single source to multiple target platforms
+
+### Advanced Features
+
+- **Template-Based Generation** - Customizable code templates for different platforms
+- **Error Handling** - Comprehensive error reporting and validation
+- **Logging** - Detailed execution logs for debugging
+- **Batch Processing** - Handles multiple models efficiently
+
+## Supported Platforms
+
+### Currently Supported
+
+- **SQL Server** (2016+)
+- **Snowflake** (All versions)
+- **Databricks** (Unity Catalog and legacy)
+- **Fabric** (Microsoft Fabric environments)
+- **RedShift** (PostgreSQL-compatible versions)
+
+### Output Formats
+
+- **PySpark Notebooks** (`.ipynb`) - For Databricks and Spark environments
+- **Project Archives** (`.zip`) - Complete packaged solutions
+
+## Project Structure
+
+### Generated Output Structure
+
+```
+snowball_project.zip/
+│
+├── notebooks/
+│   ├── model_1.ipynb
+│   ├── model_2.ipynb
+│   └── ...
+│
+├── sql_scripts/
+    ├── model_1.sql
+    ├── model_2.sql
+    └── ...
+
+```
+
+## Usage Examples
+
+### Basic Usage
+
+```bash
+# Start the interactive Snowball process
+snowball
+
+## Troubleshooting
+
+### Common Issues
+
+**DBT Profile Errors**
+```
+Error: Could not connect to target database
+```
+**Solution:** Verify your `profiles.yml` configuration and network connectivity.
+
+**Missing Dependencies**
+```
+ModuleNotFoundError: No module named 'dbt'
+```
+**Solution:** Reinstall the package: `pip install --force-reinstall git+https://github.com/jmangroup/snowball.git`
+
+**Column Mapping Issues**
+```
+
+### Getting Help
+
+Check the generated log files in the output directory or contact support with your error details.
+
+## Contributing
+
+We welcome contributions from the group
+
+## Upcoming Enhancements
+
+### Short-term Roadmap
+
+- **Documentation Support** - Get documentation for SP's/models and test files in downloads along with zipped output
+- **Performance Optimizations** - Improved execution speed and memory usage
+- **Extended Platform Support** - BigQuery, PostgreSQL, and Oracle integration
+- **Enhanced Templates** - More customizable code generation templates
+- **Aditional Buckets Calculation** - Add extra buckets from projects
+
+### Long-term Vision
+
+- **Advanced Analytics** - Performance metrics and optimization suggestions
+- **Plugin Architecture** - Extensible platform support
+
+## License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for full details.
+
+**Permissions:**
+- Commercial use
+- Modification
+- Distribution
+- Private use
+
+**Limitations:**
+- Liability
+- Warranty
+
+## Contact
+
+### Technical Support
+
+- **Primary Contact**: Vishal Verma
+- **Other Contact**: Konduru Tharun
+- **Email**: vishal.verma@jmangroup.com, kondurutharun@jmangroup.com
+- **Repository**: https://github.com/jmangroup/snowball
+
+### Issue Reporting
+
+Please report bugs and feature requests through:
+- **GitHub Issues**: https://github.com/jmangroup/snowball/issues
+
+### Community
+
+- **Releases**: Check the GitHub releases page for latest versions
+
+---
+
+**Note**: This package is actively maintained. For the latest updates and announcements, please check the GitHub repository regularly.
