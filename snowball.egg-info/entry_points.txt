@@ -1,2 +1,2 @@
 [console_scripts]
-snowball = snowball:run_dbt.main
+snowball = snowball:snowball.main
