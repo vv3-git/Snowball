@@ -11,7 +11,7 @@ except FileNotFoundError:
 
 setup(
     name="snowball",      
-    version="1.4.1",                            # Package version
+    version="1.4.2",                            # Package version
     description="Generate dbt , sql projects and PySpark notebooks.",
     long_description=long_description,          # Long description (usually README content)
     long_description_content_type="text/markdown",
@@ -33,7 +33,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'snowball = snowball:snowball.main',
+            'snowball = snowball.main',
         ],
     },
     classifiers=[                               

@@ -1,2 +1,2 @@
 [console_scripts]
-snowball = snowball:snowball.main
+snowball = snowball.main
