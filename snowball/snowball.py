@@ -14,7 +14,7 @@ import shutil
 import subprocess
 import msvcrt
 import time
-from config import *
+from snowball.config import *
 from git import Repo
 from pathlib import Path
 from datetime import datetime
