@@ -33,7 +33,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'snowball = snowball.main',
+            'snowball = snowball.snowball:main',
         ],
     },
     classifiers=[                               
