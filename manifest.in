@@ -1,2 +1,3 @@
 include README.md
 recursive-include snowball/snowball_versions *
+recursive-include snowball *.py

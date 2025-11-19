@@ -8,6 +8,15 @@ try:
 except FileNotFoundError:
     long_description = ""
 
+# Manually include package data
+def include_all_subdirs(pattern):
+    matches = []
+    for root, dirnames, filenames in os.walk('snowball'):
+        for filename in filenames:
+            if pattern in filename or pattern == '**':
+                matches.append(os.path.join(root, filename))
+    return matches
+
 setup(
     name="snowball",      
     version="1.4.5",
@@ -23,8 +32,10 @@ setup(
             'snowball_versions/**/*',
             'snowball_versions/snowball_dbt/**/*',
             'snowball_versions/snowball_dbt/*',
+            '*.py',
         ],
     },
+    include_package_data=True,
     install_requires=[       
         "GitPython>=3.1.0",
         "dbt-core>=1.5.0",
@@ -47,5 +58,4 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.7',
-    include_package_data=True,
 )
