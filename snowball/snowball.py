@@ -1209,17 +1209,28 @@ def main():
         mapping_file_path = copy_snowball_dbt(snowball_versions_path)
         copy_csv_to_downloads(mapping_file_path)
 
-        profiles_src_path = os.path.join(Path(mapping_file_path).parents[1], "profiles.yml")
+        # Fix: Look for profiles.yml in the original source location, not the copied location
+        profiles_src_path = os.path.join(snowball_versions_path, "profiles.yml")
+        
+        # If not found in source, try the parent directory
+        if not os.path.exists(profiles_src_path):
+            profiles_src_path = os.path.join(os.path.dirname(snowball_versions_path), "profiles.yml")
+            
+        # If still not found, try the project root
+        if not os.path.exists(profiles_src_path):
+            project_root = os.path.dirname(current_dir)
+            profiles_src_path = os.path.join(project_root, "profiles.yml")
+            
+        if not os.path.exists(profiles_src_path):
+            print(f"❌ profiles.yml not found in any expected location")
+            print(f"   Checked: {profiles_src_path}")
+            return
+            
         copy_profiles_to_downloads(profiles_src_path)
+        
     except Exception as e:
         print(f"❌ Error setting up snowball: {e}")
         return
-
-    mapping_file_path = copy_snowball_dbt(snowball_versions_path)
-    copy_csv_to_downloads(mapping_file_path)
-
-    profiles_src_path = os.path.join(Path(mapping_file_path).parents[1], "profiles.yml")
-    copy_profiles_to_downloads(profiles_src_path)
     
     initial_set_up()
     
