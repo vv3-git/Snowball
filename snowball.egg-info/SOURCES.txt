@@ -20,6 +20,7 @@ snowball.egg-info/requires.txt
 snowball.egg-info/top_level.txt
 snowball/snowball_versions/snowball_dbt/.gitignore
 snowball/snowball_versions/snowball_dbt/.sqlfluff
+snowball/snowball_versions/snowball_dbt/__init__.py
 snowball/snowball_versions/snowball_dbt/dbt_project.yml
 snowball/snowball_versions/snowball_dbt/packages.yml
 snowball/snowball_versions/snowball_dbt/profiles.yml
