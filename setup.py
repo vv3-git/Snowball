@@ -8,18 +8,9 @@ try:
 except FileNotFoundError:
     long_description = ""
 
-# Manually include package data
-def include_all_subdirs(pattern):
-    matches = []
-    for root, dirnames, filenames in os.walk('snowball'):
-        for filename in filenames:
-            if pattern in filename or pattern == '**':
-                matches.append(os.path.join(root, filename))
-    return matches
-
 setup(
-    name="snowball",      
-    version="1.4.5",
+    name="snowball",
+    version="1.4.6",
     description="Generate dbt, sql projects and PySpark notebooks.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -27,16 +18,8 @@ setup(
     author_email="vishal.verma@jmangroup.com",
     url="https://gitserver/org/dbt_runner",
     packages=find_packages(),
-    package_data={
-        'snowball': [
-            'snowball_versions/**/*',
-            'snowball_versions/snowball_dbt/**/*',
-            'snowball_versions/snowball_dbt/*',
-            '*.py',
-        ],
-    },
-    include_package_data=True,
-    install_requires=[       
+    include_package_data=True,   # <-- let MANIFEST.in do all the work
+    install_requires=[
         "GitPython>=3.1.0",
         "dbt-core>=1.5.0",
         "sqlfluff>=0.13.0",
@@ -52,10 +35,5 @@ setup(
             'snowball = snowball.snowball:main',
         ],
     },
-    classifiers=[                               
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ],
     python_requires='>=3.7',
 )
