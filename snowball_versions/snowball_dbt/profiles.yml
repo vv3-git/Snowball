@@ -1,0 +1,14 @@
+Snowball_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: OFFFORM-ES02047
+      user: VV1221
+      password: Zxcvbnm@600113
+      role: ACCOUNTADMIN
+      database: arr_sandbox
+      warehouse: compute_wh
+      schema: dbo
+      threads: 4
+      client_session_keep_alive: False
