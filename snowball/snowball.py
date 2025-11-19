@@ -1197,8 +1197,25 @@ def main():
 
     # Clone the latest repo from Snowball dbt
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    snowball_versions_path = os.path.join(current_dir, "..", "snowball_versions", "snowball_dbt")
-    snowball_versions_path = os.path.normpath(snowball_versions_path)
+    snowball_versions_path = os.path.join(current_dir, "snowball_versions", "snowball_dbt")
+    
+    if not os.path.exists(snowball_versions_path):
+        snowball_versions_path = os.path.join(current_dir, "..", "snowball_versions", "snowball_dbt")
+        snowball_versions_path = os.path.normpath(snowball_versions_path)
+    
+    if not os.path.exists(snowball_versions_path):
+        try:
+            import pkg_resources
+            snowball_versions_path = pkg_resources.resource_filename('snowball', 'snowball_versions/snowball_dbt')
+        except ImportError:
+            import importlib.resources
+            try:
+                with importlib.resources.path('snowball.snowball_versions', 'snowball_dbt') as path:
+                    snowball_versions_path = str(path)
+            except:
+                print(f"❌ Could not locate snowball_versions directory")
+                print(f"   Checked: {snowball_versions_path}")
+                return
 
     mapping_file_path = copy_snowball_dbt(snowball_versions_path)
     copy_csv_to_downloads(mapping_file_path)

@@ -1,0 +1,2 @@
+include snowball_versions/**/*
+recursive-include snowball_versions *

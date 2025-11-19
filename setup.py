@@ -18,7 +18,13 @@ setup(
     author="Vishal Verma",                         # Author name
     author_email="vishal.verma@jmangroup.com",
     url="https://gitserver/org/dbt_runner",    # URL of project homepage or repo
-    packages=find_packages(),                   # Automatically find packages inside your project directory
+    packages= {
+        find_packages(),                   # Automatically find packages inside your project directory
+        'snowball': [
+            'snowball_versions/**/*',
+            'snowball_versions/snowball_dbt/**/*',
+        ],
+    },
     install_requires=[       
         "GitPython>=3.1.0",                   # List dependencies your package requires
         "dbt-core",
