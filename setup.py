@@ -1,7 +1,6 @@
 from setuptools import setup, find_packages
 import os
 
-
 this_directory = os.path.abspath(os.path.dirname(__file__))
 try:
     with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
@@ -11,15 +10,15 @@ except FileNotFoundError:
 
 setup(
     name="snowball",      
-    version="1.4.4",                            # Package version
+    version="1.4.5",                            # Package version
     description="Generate dbt , sql projects and PySpark notebooks.",
     long_description=long_description,          # Long description (usually README content)
     long_description_content_type="text/markdown",
     author="Vishal Verma",                         # Author name
     author_email="vishal.verma@jmangroup.com",
     url="https://gitserver/org/dbt_runner",    # URL of project homepage or repo
-    packages= {
-        find_packages(),                   # Automatically find packages inside your project directory
+    packages=find_packages(),                   # Automatically find packages inside your project directory
+    package_data={
         'snowball': [
             'snowball_versions/**/*',
             'snowball_versions/snowball_dbt/**/*',
@@ -35,7 +34,6 @@ setup(
         "dbt-fabric",
         "dbt-snowflake",
         "dbt-databricks"
-
     ],
     entry_points={
         'console_scripts': [
