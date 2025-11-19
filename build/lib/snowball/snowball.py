@@ -1153,22 +1153,33 @@ def copy_profiles_to_downloads(profiles_src_path: str) -> str:
     Copy profiles.yml from the DBT project to the user's Downloads folder
     (for the user to update credentials), similar to column_mapping.
     """
-    downloads_dir = Path.home() / "Downloads"
-    downloads_dir.mkdir(parents=True, exist_ok=True)
-
-    src_path = Path(profiles_src_path)
-    if not src_path.is_file():
-        raise FileNotFoundError(f"profiles.yml not found at: {profiles_src_path}")
-
-    dest_path = downloads_dir / "profiles.yml"
-    shutil.copy(src_path, dest_path)
-
     try:
-        os.chmod(dest_path, 0o666)
-    except Exception as e:
-        print(f"Warning: Could not set permissions on {dest_path}: {e}")
+        downloads_dir = Path.home() / "Downloads"
+        downloads_dir.mkdir(parents=True, exist_ok=True)
 
-    return str(dest_path)
+        src_path = Path(profiles_src_path)
+        if not src_path.is_file():
+            raise FileNotFoundError(f"profiles.yml not found at: {profiles_src_path}")
+
+        dest_path = downloads_dir / "profiles.yml"
+        
+        # Copy the file
+        shutil.copy2(src_path, dest_path)
+        
+        # Set permissions
+        try:
+            os.chmod(dest_path, 0o666)  # read/write for owner, read for group/others
+        except Exception as e:
+            print(f"Warning: Could not set permissions on {dest_path}: {e}")
+
+        return str(dest_path)
+
+    except FileNotFoundError as e:
+        print(f"❌ {e}")
+        raise
+    except Exception as e:
+        print(f"❌ Failed to copy profiles.yml: {e}")
+        raise
 
 def update_revenue_model_with_table_name(output_dir, table_name):
     """
@@ -1195,31 +1206,26 @@ def main():
     # Clean up previous runs
     # cleanup_previous_run()
 
-    # Clone the latest repo from Snowball dbt
     # Get the snowball_versions path from the package
     current_dir = os.path.dirname(os.path.abspath(__file__))
     snowball_versions_path = os.path.join(current_dir, "snowball_versions", "snowball_dbt")
     
     if not os.path.exists(snowball_versions_path):
         print(f"❌ Source directory not found: {snowball_versions_path}")
-        print("Please ensure the snowball_versions folder is inside the snowball package directory")
         return
 
     try:
+        # Clone the latest repo from Snowball dbt
         mapping_file_path = copy_snowball_dbt(snowball_versions_path)
+        # Download Column Mapping
         copy_csv_to_downloads(mapping_file_path)
-
-        profiles_src_path = os.path.join(Path(mapping_file_path).parents[1], "profiles.yml")
-        copy_profiles_to_downloads(profiles_src_path)
+        # Download profiles.yml
+        profiles_source_path = os.path.join(snowball_versions_path, "profiles.yml")
+        copy_profiles_to_downloads(profiles_source_path)
+                
     except Exception as e:
         print(f"❌ Error setting up snowball: {e}")
         return
-
-    mapping_file_path = copy_snowball_dbt(snowball_versions_path)
-    copy_csv_to_downloads(mapping_file_path)
-
-    profiles_src_path = os.path.join(Path(mapping_file_path).parents[1], "profiles.yml")
-    copy_profiles_to_downloads(profiles_src_path)
     
     initial_set_up()
     
