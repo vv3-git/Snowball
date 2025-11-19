@@ -497,7 +497,6 @@ def connection_check(dbname, schemaname, tablename):
 
 
 def run_dbt(dbname, schemaname, tablename):
-    """Run all dbt models with detailed progress tracking and logging."""
     vars_dict = {
         'my_database': dbname,
         'my_schema': schemaname,
@@ -512,79 +511,48 @@ def run_dbt(dbname, schemaname, tablename):
         "--vars", vars_str
     ]
 
-    model_count = get_dbt_models_count()
+    print("🔄 Processing...")
 
-    with tqdm(
-        total=model_count,
-        desc="Running dbt models",
-        colour="green",
-        bar_format='{desc}  {percentage:3.0f}%|{bar:' + str(bar_width) + '}| {n_fmt}/{total_fmt} models'
-    ) as pbar:
+    dbt = dbtRunner()
+    stdout_capture = StringIO()
+    stderr_capture = StringIO()
+    completed_models = set()
 
-        dbt = dbtRunner()
-        stdout_capture = StringIO()
-        stderr_capture = StringIO()
-        completed_models = set()
+    def track_progress_from_output():
+        output = stdout_capture.getvalue()
+        completion_patterns = [
+            r"\d+\s+of\s+\d+\s+OK\s+created.*model\s+([^\s]+)",
+            r"OK\s+created.*model\s+([^\s]+).*\[OK",
+            r"Completed\s+model\s+([^\s]+).*SUCCESS",
+        ]
+        for pattern in completion_patterns:
+            matches = re.findall(pattern, output)
+            for match in matches:
+                if match and match not in completed_models:
+                    completed_models.add(match)
 
-        def track_progress_from_output():
-            """Parse stdout to track model completion progress."""
-            output = stdout_capture.getvalue()
-            completion_patterns = [
-                r"\d+\s+of\s+\d+\s+OK\s+created.*model\s+([^\s]+)",
-                r"OK\s+created.*model\s+([^\s]+).*\[OK",
-                r"Completed\s+model\s+([^\s]+).*SUCCESS",
-            ]
-            for pattern in completion_patterns:
-                matches = re.findall(pattern, output)
-                for match in matches:
-                    if match and match not in completed_models:
-                        completed_models.add(match)
-                        if pbar.n < model_count:
-                            pbar.update(1)
-                            model_name_short = match.split('.')[-1] if '.' in match else match
-                            pbar.set_description(f"🔄 Running: {model_name_short}")
+    def run_dbt_command():
+        with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
+            return dbt.invoke(run_args)
 
-        def run_dbt_command():
-            with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
-                return dbt.invoke(run_args)
+    start_time = time.time()
+    result_container = []
+    dbt_thread = threading.Thread(
+        target=lambda: result_container.append(run_dbt_command())
+    )
+    dbt_thread.daemon = True
+    dbt_thread.start()
 
-        start_time = time.time()
-        result_container = []
-        dbt_thread = threading.Thread(
-            target=lambda: result_container.append(run_dbt_command())
-        )
-        dbt_thread.daemon = True
-        dbt_thread.start()
+    last_output_size = 0
+    while dbt_thread.is_alive():
+        current_output_size = stdout_capture.tell()
+        if current_output_size > last_output_size:
+            track_progress_from_output()
+            last_output_size = current_output_size
+        time.sleep(0.5)
 
-        last_output_size = 0
-        while dbt_thread.is_alive():
-            current_output_size = stdout_capture.tell()
-            if current_output_size > last_output_size:
-                track_progress_from_output()
-                last_output_size = current_output_size
-            time.sleep(0.5)
-
-        result = result_container[0] if result_container else None
-        track_progress_from_output()
-
-        if result and result.success and pbar.n < model_count:
-            pbar.update(model_count - pbar.n)
-
-        if result and result.success:
-            pbar.set_description(f"✅ All {model_count} models executed successfully")
-        else:
-            completed_count = pbar.n
-            pbar.set_description(f"❌ Execution failed ({completed_count}/{model_count} models completed)")
-
-    # --- ✅ NEW: Save full dbt run logs for debugging ---
-    log_path = os.path.join(output_dir, "dbt_run_log.txt")
-    with open(log_path, "w", encoding="utf-8") as f:
-        f.write("=== DBT RUN STDOUT ===\n")
-        f.write(stdout_capture.getvalue())
-        f.write("\n\n=== DBT RUN STDERR ===\n")
-        f.write(stderr_capture.getvalue())
-
-    print(f"[DEBUG] Full dbt run logs saved to: {log_path}")
+    result = result_container[0] if result_container else None
+    track_progress_from_output()
 
     return result
 
@@ -692,7 +660,6 @@ def build_dbt_compile_args(dbname, schemaname, tablename):
     ]
 
 def run_dbt_args(cli_args, dbname, schemaname, tablename):
-    """Run dbt with given arguments, with actual compilation progress tracking."""
     vars_dict = {
         'my_database': dbname,
         'my_schema': schemaname,
@@ -701,148 +668,63 @@ def run_dbt_args(cli_args, dbname, schemaname, tablename):
     vars_str = json.dumps(vars_dict)
     cli_args += ["--vars", vars_str]
 
-    # Check if this is a compile operation for enhanced progress tracking
     is_compile = "compile" in cli_args
     
     if is_compile:
-        model_count = get_dbt_models_count()
-        with tqdm(
-            total=model_count, 
-            desc="Compiling dbt models",
-            colour="green", 
-            bar_format='{desc}  {percentage:3.0f}%|{bar:' + str(bar_width) + '}| {n_fmt}/{total_fmt} models'
-        ) as pbar:
+        dbt = dbtRunner()
+        stdout_capture = StringIO()
+        stderr_capture = StringIO()
+        
+        compiled_models = set()
+        
+        def track_compile_progress_from_output():
+            output = stdout_capture.getvalue()
+            compile_patterns = [
+                r"Compiling\s+model\s+([^\s]+)",
+                r"Compiled\s+model\s+([^\s]+)",
+                r"Processing\s+model\s+([^\s]+)",
+                r"Found\s+(\d+)\s+models",
+            ]
             
-            dbt = dbtRunner()
-            stdout_capture = StringIO()
-            stderr_capture = StringIO()
-            
-            # Track compiled models
-            compiled_models = set()
-            
-            def track_compile_progress_from_output():
-                """Parse stdout to track model compilation progress"""
-                output = stdout_capture.getvalue()
-                # Look for compilation patterns in dbt output
-                compile_patterns = [
-                    r"Compiling\s+model\s+([^\s]+)",  # "Compiling model core.revenue"
-                    r"Compiled\s+model\s+([^\s]+)",   # "Compiled model core.revenue"
-                    r"Processing\s+model\s+([^\s]+)", # "Processing model core.revenue"
-                    r"Found\s+(\d+)\s+models",        # "Found 18 models" - for initial count
-                ]
-                
-                for pattern in compile_patterns:
-                    matches = re.findall(pattern, output)
-                    for match in matches:
-                        if match and match not in compiled_models:
-                            # If it's a number from "Found X models", skip
-                            if match.isdigit():
-                                continue
-                            compiled_models.add(match)
-                            if pbar.n < model_count:
-                                pbar.update(1)
-                                model_name_short = match.split('.')[-1] if '.' in match else match
-                                pbar.set_description(f"📝 Compiling: {model_name_short}")
-            
-            # Run dbt compile with output capture
-            start_time = time.time()
-            
-            # Use threading to monitor progress while dbt runs
-            def run_dbt_command():
-                with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
-                    return dbt.invoke(cli_args)
-            
-            # Run dbt in a separate thread
-            result_container = []
-            dbt_thread = threading.Thread(
-                target=lambda: result_container.append(run_dbt_command())
-            )
-            dbt_thread.daemon = True
-            dbt_thread.start()
-            
-            # Monitor progress while dbt is running
-            last_output_size = 0
-            while dbt_thread.is_alive():
-                # Check for new output and track progress
-                current_output_size = stdout_capture.tell()
-                if current_output_size > last_output_size:
-                    track_compile_progress_from_output()
-                    last_output_size = current_output_size
-                time.sleep(0.3)  # Check every 300ms for compile (faster operation)
-            
-            # Get the final result
-            result = result_container[0] if result_container else None
-            
-            # Final progress check with all output
-            track_compile_progress_from_output()
-            
-            # Ensure progress bar reaches 100% if successful
-            if result and result.success and pbar.n < model_count:
-                pbar.update(model_count - pbar.n)
-            
-            if result and result.success:
-                pbar.set_description(f"✅ All {model_count} models compiled successfully")
-            else:
-                compiled_count = pbar.n
-                pbar.set_description(f"❌ Compilation failed ({compiled_count}/{model_count} models compiled)")
+            for pattern in compile_patterns:
+                matches = re.findall(pattern, output)
+                for match in matches:
+                    if match and match not in compiled_models:
+                        if match.isdigit():
+                            continue
+                        compiled_models.add(match)
+        
+        def run_dbt_command():
+            with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
+                return dbt.invoke(cli_args)
+        
+        result_container = []
+        dbt_thread = threading.Thread(
+            target=lambda: result_container.append(run_dbt_command())
+        )
+        dbt_thread.daemon = True
+        dbt_thread.start()
+        
+        last_output_size = 0
+        while dbt_thread.is_alive():
+            current_output_size = stdout_capture.tell()
+            if current_output_size > last_output_size:
+                track_compile_progress_from_output()
+                last_output_size = current_output_size
+            time.sleep(0.3)
+        
+        result = result_container[0] if result_container else None
+        track_compile_progress_from_output()
         
         return result
         
     else:
-        # For non-compile operations, use simple progress
-        with tqdm(
-            total=100,
-            desc="Running dbt command",
-            colour="green",
-            bar_format='{desc}  {percentage:3.0f}%|{bar:' + str(bar_width) + '}|'
-        ) as pbar:
-            
-            dbt = dbtRunner()
-            stdout_capture = StringIO()
-            stderr_capture = StringIO()
-            
-            # Initial setup
-            pbar.update(20)
-            pbar.set_description("🔧 Initializing command")
-            time.sleep(0.3)
-            
-            # Command execution
-            pbar.update(30)
-            pbar.set_description("⚡ Executing command")
-            
-            # Actually run the command with output suppressed
-            start_time = time.time()
-            with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
-                result = dbt.invoke(cli_args)
-            execution_time = time.time() - start_time
-            
-            # Update progress based on execution time
-            current_progress = 50
-            
-            if execution_time < 1:
-                pbar.update(50)
-            else:
-                command_steps = [
-                    ("🔄 Processing request", 25),
-                    ("✅ Command complete", 25)
-                ]
-                
-                step_time = execution_time / len(command_steps)
-                
-                for step_desc, step_progress in command_steps:
-                    pbar.set_description(step_desc)
-                    time.sleep(step_time * 0.7)
-                    current_progress += step_progress
-                    pbar.update(step_progress)
-            
-            # Ensure we reach 100%
-            if pbar.n < 100:
-                pbar.update(100 - pbar.n)
-            
-            if result.success:
-                pbar.set_description("✅ Command completed successfully")
-            else:
-                pbar.set_description("❌ Command failed")
+        dbt = dbtRunner()
+        stdout_capture = StringIO()
+        stderr_capture = StringIO()
+        
+        with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
+            result = dbt.invoke(cli_args)
         
         return result
 
@@ -854,13 +736,13 @@ def zip_directory(source_dir, zip_path):
         total_files += len(files)
     
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        with tqdm(total=total_files, desc="Creating archive", colour="green", bar_format='{desc}  {percentage:3.0f}%|{bar:' + str(bar_width) + '}|') as pbar:
-            for root, _, files in os.walk(source_dir):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    arcname = os.path.relpath(file_path, source_dir)
-                    zipf.write(file_path, arcname)
-                    pbar.update(1)
+        # with tqdm(total=total_files, desc="Creating archive", colour="green", bar_format='{desc}  {percentage:3.0f}%|{bar:' + str(bar_width) + '}|') as pbar:
+        for root, _, files in os.walk(source_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, source_dir)
+                zipf.write(file_path, arcname)
+                    # pbar.update(1)
 
 def run_sqlfluff_on_directory(directory_path, project_root):
     """
@@ -878,25 +760,25 @@ def run_sqlfluff_on_directory(directory_path, project_root):
             return True
         
         success_count = 0
-        with tqdm(total=len(sql_files), desc="Applying SQLFluff", colour="green",bar_format='{desc}  {percentage:3.0f}%|{bar:' + str(bar_width) + '}|') as pbar:
-            for sql_file in sql_files:
-                try:
-                    # Run SQLFluff on individual file
-                    result = subprocess.run(
-                        ["sqlfluff", "fix", "--force", sql_file],
-                        check=False,
-                        text=True,
-                        capture_output=True,
-                        cwd=project_root
-                    )
+        # with tqdm(total=len(sql_files), desc="Applying SQLFluff", colour="green",bar_format='{desc}  {percentage:3.0f}%|{bar:' + str(bar_width) + '}|') as pbar:
+        for sql_file in sql_files:
+            try:
+                # Run SQLFluff on individual file
+                result = subprocess.run(
+                    ["sqlfluff", "fix", "--force", sql_file],
+                    check=False,
+                    text=True,
+                    capture_output=True,
+                    cwd=project_root
+                )
 
-                    if result.returncode == 0:
-                        success_count += 1
-                        
-                except Exception:
-                    pass
+                if result.returncode == 0:
+                    success_count += 1
+                    
+            except Exception:
+                pass
                 
-                pbar.update(1)
+                # pbar.update(1)
         
         return success_count > 0
             
@@ -912,8 +794,8 @@ def apply_sqlfluff_to_compiled(project_root):
     try:
         subprocess.run(["sqlfluff", "--version"], check=True, capture_output=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
-        with tqdm(desc="❌ SQLFluff not available", bar_format='{desc}') as pbar:
-            time.sleep(1)
+        # with tqdm(desc="❌ SQLFluff not available", bar_format='{desc}') as pbar:
+        time.sleep(1)
         return False
     
     # Run SQLFluff on the compiled models directory
@@ -934,46 +816,46 @@ def generate_notebooks():
                         if folder_name != "models":
                             model_folders.add(folder_name)
 
-        with tqdm(total=len(model_folders), desc="📓 Generating notebooks", bar_format='{desc}  {percentage:3.0f}%|{bar:' + str(bar_width) + '}|') as pbar:
-            for folder in model_folders:
-                if folder == "models":
-                    continue
-                    
-                notebook_path = os.path.join(notebooks_dir, f"{folder}_nb.ipynb")
-                nb = new_notebook()
+        # with tqdm(total=len(model_folders), desc="📓 Generating notebooks", bar_format='{desc}  {percentage:3.0f}%|{bar:' + str(bar_width) + '}|') as pbar:
+        for folder in model_folders:
+            if folder == "models":
+                continue
                 
-                folder_name = folder.upper().split('_')[-1]
-                nb.cells.append(new_markdown_cell(
-                    "## SNOWBALL Spark SQL version\n"
-                    f"#### **Notebook to create {folder_name} layer**\n"
-                    f"##### **Creating {folder_name} schema to create required {folder_name} tables**\n"
-                ))
-                nb.cells.append(new_code_cell(f"%%sql\nCREATE SCHEMA IF NOT EXISTS {folder.split('_')[-1]};"))
+            notebook_path = os.path.join(notebooks_dir, f"{folder}_nb.ipynb")
+            nb = new_notebook()
+            
+            folder_name = folder.upper().split('_')[-1]
+            nb.cells.append(new_markdown_cell(
+                "## SNOWBALL Spark SQL version\n"
+                f"#### **Notebook to create {folder_name} layer**\n"
+                f"##### **Creating {folder_name} schema to create required {folder_name} tables**\n"
+            ))
+            nb.cells.append(new_code_cell(f"%%sql\nCREATE SCHEMA IF NOT EXISTS {folder.split('_')[-1]};"))
 
-                if folder == 'tests':
-                    folder_path = os.path.join(compiled_dir, 'Snowball_dbt', folder)
-                else:            
-                    folder_path = os.path.join(compiled_dir, 'Snowball_dbt', 'models', folder)
+            if folder == 'tests':
+                folder_path = os.path.join(compiled_dir, 'Snowball_dbt', folder)
+            else:            
+                folder_path = os.path.join(compiled_dir, 'Snowball_dbt', 'models', folder)
 
-                for root, _, files in os.walk(folder_path):
-                    for file in sorted(files):
-                        if file.endswith('.sql'):
-                            file_path = os.path.join(root, file)
-                            model_name = os.path.splitext(file)[0]
-                            
-                            with open(file_path, 'r', encoding='utf-8') as f:
-                                sql_content = f.read()                    
-                            nb.cells.append(new_markdown_cell(f"##### **{model_name}**"))
-                            nb.cells.append(new_code_cell(
-                                f"%%sql\n"
-                                f"DROP TABLE IF EXISTS {folder.split('_')[-1]}.{model_name};\n"
-                                f"CREATE TABLE {folder.split('_')[-1]}.{model_name} AS\n"
-                                f"{sql_content}"
-                            ))
-                with open(notebook_path, 'w', encoding='utf-8') as f:
-                    nbf.write(nb, f)
-                    
-                pbar.update(1)
+            for root, _, files in os.walk(folder_path):
+                for file in sorted(files):
+                    if file.endswith('.sql'):
+                        file_path = os.path.join(root, file)
+                        model_name = os.path.splitext(file)[0]
+                        
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            sql_content = f.read()                    
+                        nb.cells.append(new_markdown_cell(f"##### **{model_name}**"))
+                        nb.cells.append(new_code_cell(
+                            f"%%sql\n"
+                            f"DROP TABLE IF EXISTS {folder.split('_')[-1]}.{model_name};\n"
+                            f"CREATE TABLE {folder.split('_')[-1]}.{model_name} AS\n"
+                            f"{sql_content}"
+                        ))
+            with open(notebook_path, 'w', encoding='utf-8') as f:
+                nbf.write(nb, f)
+                
+            # pbar.update(1)
                 
     except Exception:
         return False
@@ -1072,10 +954,10 @@ def process_compiled_sql_files():
             if file.endswith(".sql"):
                 sql_files.append(os.path.join(root, file))
     
-    with tqdm(total=len(sql_files), desc="Transforming SQL files", colour="green", bar_format='{desc}  {percentage:3.0f}%|{bar:' + str(bar_width) + '}|') as pbar:
-        for sql_file in sql_files:
-            transform_compiled_sql(sql_file)
-            pbar.update(1)
+# with tqdm(total=len(sql_files), desc="Transforming SQL files", colour="green", bar_format='{desc}  {percentage:3.0f}%|{bar:' + str(bar_width) + '}|') as pbar:
+    for sql_file in sql_files:
+        transform_compiled_sql(sql_file)
+        # pbar.update(1)
 
 def remove_readonly_files(func, path, _):
     """Error handler for removing read-only files on Windows"""

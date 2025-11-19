@@ -10,7 +10,7 @@ except FileNotFoundError:
 
 setup(
     name="snowball",
-    version="1.4.6",
+    version="1.4.7",
     description="Generate dbt, sql projects and PySpark notebooks.",
     long_description=long_description,
     long_description_content_type="text/markdown",
