@@ -75,7 +75,7 @@ Follow these steps to generate your Snowball-ready code.
    ```bash
    python -m venv venv
    venv\Scripts\activate
-````
+```
 
 If you encounter any execution policy restrictions, use:
 
