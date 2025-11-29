@@ -361,7 +361,7 @@ def connection_check(dbname, schemaname, tablename):
         # Actually run the debug command and capture real-time progress
         start_time = time.time()
         # print(vars_dict)
-        print(f"[DEBUG] Running dbt debug with args: {debug_args}")
+        # print(f"[DEBUG] Running dbt debug with args: {debug_args}")
         with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
             result = dbt.invoke(debug_args)
         execution_time = time.time() - start_time
