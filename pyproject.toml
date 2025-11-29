@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "snowball"
+version = "1.4.8"
+description = "Generate dbt, SQL projects and PySpark notebooks."
+readme = "README.md"
+authors = [
+    { name = "Vishal Verma", email = "vishal.verma@jmangroup.com" }
+]
+requires-python = ">=3.8"
+
+dependencies = [
+    "GitPython>=3.1.0",
+    "dbt-core>=1.7.0",
+    "sqlfluff>=3.0.0",
+    "nbformat>=5.0.0",
+    "tqdm>=4.60.0"
+]
+
+# Optional dbt adapters
+[project.optional-dependencies]
+databricks = ["dbt-databricks>=1.7.0"]
+snowflake = ["dbt-snowflake>=1.7.0"]
+sqlserver = ["dbt-sqlserver>=1.7.0"]
+fabric = ["dbt-fabric>=1.7.0"]
+all = [
+    "dbt-databricks>=1.7.0",
+    "dbt-snowflake>=1.7.0",
+    "dbt-sqlserver>=1.7.0",
+    "dbt-fabric>=1.7.0"
+]
+
+[project.scripts]
+snowball = "snowball.snowball:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
