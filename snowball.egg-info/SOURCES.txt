@@ -1,7 +1,7 @@
 LICENSE
 MANIFEST.in
 README.md
-setup.py
+pyproject.toml
 snowball/__init__.py
 snowball/config.py
 snowball/dbt_operations.py
@@ -91,6 +91,7 @@ snowball/snowball_versions/snowball_sql/tests/reconciliation_bridge_balance_test
 snowball/snowball_versions/snowball_sql/tests/unique_record.sql
 snowball_versions/snowball_dbt/.gitignore
 snowball_versions/snowball_dbt/.sqlfluff
+snowball_versions/snowball_dbt/__init__.py
 snowball_versions/snowball_dbt/dbt_project.yml
 snowball_versions/snowball_dbt/packages.yml
 snowball_versions/snowball_dbt/profiles.yml

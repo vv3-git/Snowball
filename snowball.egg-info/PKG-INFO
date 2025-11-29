@@ -1,13 +1,32 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: snowball
-Version: 1.4.7
-Summary: Generate dbt, sql projects and PySpark notebooks.
-Home-page: https://gitserver/org/dbt_runner
-Author: Vishal Verma
-Author-email: vishal.verma@jmangroup.com
-Requires-Python: >=3.7
+Version: 1.4.8
+Summary: Generate dbt, SQL projects and PySpark notebooks.
+Author-email: Vishal Verma <vishal.verma@jmangroup.com>
+Project-URL: Homepage, https://gitserver/org/dbt_runner
+Project-URL: Source, https://gitserver/org/dbt_runner
+Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: GitPython>=3.1.0
+Requires-Dist: dbt-core>=1.7.0
+Requires-Dist: sqlfluff>=3.0.0
+Requires-Dist: nbformat>=5.0.0
+Requires-Dist: tqdm>=4.60.0
+Provides-Extra: sqlserver
+Requires-Dist: dbt-sqlserver>=1.7.0; extra == "sqlserver"
+Provides-Extra: fabrics
+Requires-Dist: dbt-fabric>=1.7.0; extra == "fabrics"
+Provides-Extra: snowflake
+Requires-Dist: dbt-snowflake>=1.7.0; extra == "snowflake"
+Provides-Extra: databricks
+Requires-Dist: dbt-databricks>=1.7.0; extra == "databricks"
+Provides-Extra: all
+Requires-Dist: dbt-sqlserver>=1.7.0; extra == "all"
+Requires-Dist: dbt-fabric>=1.7.0; extra == "all"
+Requires-Dist: dbt-snowflake>=1.7.0; extra == "all"
+Requires-Dist: dbt-databricks>=1.7.0; extra == "all"
+Dynamic: license-file
 
 # Snowball Package
 
@@ -86,7 +105,7 @@ Follow these steps to generate your Snowball-ready code.
    ```bash
    python -m venv venv
    venv\Scripts\activate
-````
+```
 
 If you encounter any execution policy restrictions, use:
 

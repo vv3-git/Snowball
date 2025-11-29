@@ -3,8 +3,8 @@ Snowball_dbt:
   outputs:
     dev:
       type: snowflake
-      account: OFFFORM-ES02047
-      user: VV1221
+      account: BVYSPGU-CN80718
+      user: RR123
       password: Zxcvbnm@600113
       role: ACCOUNTADMIN
       database: arr_sandbox
