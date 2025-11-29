@@ -17,20 +17,11 @@ dependencies = [
     "dbt-core>=1.7.0",
     "sqlfluff>=3.0.0",
     "nbformat>=5.0.0",
-    "tqdm>=4.60.0"
-]
-
-# Optional dbt adapters
-[project.optional-dependencies]
-databricks = ["dbt-databricks>=1.7.0"]
-snowflake = ["dbt-snowflake>=1.7.0"]
-sqlserver = ["dbt-sqlserver>=1.7.0"]
-fabric = ["dbt-fabric>=1.7.0"]
-all = [
-    "dbt-databricks>=1.7.0",
-    "dbt-snowflake>=1.7.0",
-    "dbt-sqlserver>=1.7.0",
-    "dbt-fabric>=1.7.0"
+    "tqdm>=4.60.0",
+    "dbt-snowflake",
+    "dbt-databricks",
+    "dbt-sqlserver",
+    "dbt-fabric"
 ]
 
 [project.scripts]

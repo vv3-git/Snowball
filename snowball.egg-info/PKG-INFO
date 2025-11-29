@@ -11,19 +11,10 @@ Requires-Dist: dbt-core>=1.7.0
 Requires-Dist: sqlfluff>=3.0.0
 Requires-Dist: nbformat>=5.0.0
 Requires-Dist: tqdm>=4.60.0
-Provides-Extra: databricks
-Requires-Dist: dbt-databricks>=1.7.0; extra == "databricks"
-Provides-Extra: snowflake
-Requires-Dist: dbt-snowflake>=1.7.0; extra == "snowflake"
-Provides-Extra: sqlserver
-Requires-Dist: dbt-sqlserver>=1.7.0; extra == "sqlserver"
-Provides-Extra: fabric
-Requires-Dist: dbt-fabric>=1.7.0; extra == "fabric"
-Provides-Extra: all
-Requires-Dist: dbt-databricks>=1.7.0; extra == "all"
-Requires-Dist: dbt-snowflake>=1.7.0; extra == "all"
-Requires-Dist: dbt-sqlserver>=1.7.0; extra == "all"
-Requires-Dist: dbt-fabric>=1.7.0; extra == "all"
+Requires-Dist: dbt-snowflake
+Requires-Dist: dbt-databricks
+Requires-Dist: dbt-sqlserver
+Requires-Dist: dbt-fabric
 Dynamic: license-file
 
 # Snowball Package
