@@ -1,9 +1,0 @@
-
-venv/
-target/
-dbt_packages/
-logs/
-.user.yml
-dbt_config.yml
-generate_profiles.py
-package-lock.yml

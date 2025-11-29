@@ -127,6 +127,7 @@ class SQLProcessor:
                                     f"CREATE TABLE {folder.split('_')[-1]}.{model_name} AS\n"
                                     f"{sql_content}"
                                 ))
+                                
                     with open(notebook_path, 'w', encoding='utf-8') as f:
                         nbf.write(nb, f)
                         

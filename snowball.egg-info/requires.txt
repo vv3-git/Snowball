@@ -5,15 +5,15 @@ nbformat>=5.0.0
 tqdm>=4.60.0
 
 [all]
+dbt-databricks>=1.7.0
+dbt-snowflake>=1.7.0
 dbt-sqlserver>=1.7.0
 dbt-fabric>=1.7.0
-dbt-snowflake>=1.7.0
-dbt-databricks>=1.7.0
 
 [databricks]
 dbt-databricks>=1.7.0
 
-[fabrics]
+[fabric]
 dbt-fabric>=1.7.0
 
 [snowflake]
